@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches DarkPalette.navyDeep in the Flutter app. Used as the native
+         window background so any surface gap during a heavy relayout (e.g.
+         splash -> dashboard) reads as dark instead of the platform default
+         white, since every screen in this app is dark-themed. -->
+    <color name="window_background">#FF060B14</color>
+</resources>
