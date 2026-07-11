@@ -1,0 +1,84 @@
+version: "3.9"
+
+# NOTE: this compose file is for local development only. In AWS, Postgres and
+# Redis are replaced by RDS and ElastiCache respectively (never publish their
+# ports to 0.0.0.0, and always set REDIS_PASSWORD) — see the deployment
+# report for the production topology.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: climatetech_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U climatetech -d climatetech_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: climatetech_redis
+    restart: unless-stopped
+    # REDIS_PASSWORD defaults empty for local dev convenience; set it in
+    # your .env and this stays consistent with the backend's own
+    # REDIS_PASSWORD env var. Always set it for anything beyond a laptop.
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-}"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "--no-auth-warning", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # One-off schema bootstrap — run explicitly (`docker compose run --rm
+  # migrate`) against a brand-new database before first starting `backend`.
+  # Not part of the normal `docker compose up` service graph on purpose: see
+  # cmd/migrate's doc comment for why schema changes shouldn't run
+  # automatically on every container boot.
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: climatetech_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    entrypoint: ["./migrate"]
+    profiles: ["tools"]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: climatetech_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - ./backend/firebase-service-account.json:/app/firebase-service-account.json:ro
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  postgres_data:
