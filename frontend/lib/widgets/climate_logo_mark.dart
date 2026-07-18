@@ -39,8 +39,8 @@ class ClimateWordmark extends StatelessWidget {
       text: TextSpan(
         style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w700, color: DarkPalette.textPrimary),
         children: const [
-          TextSpan(text: 'Climate '),
-          TextSpan(text: 'Tech', style: TextStyle(color: DarkPalette.leafGreen)),
+          TextSpan(text: 'OneClimate '),
+          TextSpan(text: 'AI', style: TextStyle(color: DarkPalette.leafGreen)),
         ],
       ),
     );

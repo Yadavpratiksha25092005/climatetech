@@ -55,8 +55,12 @@ func RequireHTTPS(cfg *config.Config) gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		// Requires an explicit "https" — a missing/empty header (which a
+		// misconfigured or bypassed load balancer would produce) must not
+		// silently pass, since that's exactly the case this check exists to
+		// catch.
 		proto := c.GetHeader("X-Forwarded-Proto")
-		if proto != "" && proto != "https" {
+		if proto != "https" {
 			c.AbortWithStatusJSON(http.StatusUpgradeRequired, gin.H{
 				"success": false,
 				"message": "HTTPS is required",

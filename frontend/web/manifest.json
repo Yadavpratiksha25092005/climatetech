@@ -1,11 +1,11 @@
 {
-    "name": "climatetech_frontend",
-    "short_name": "climatetech_frontend",
+    "name": "OneClimate AI",
+    "short_name": "OneClimate AI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "OneClimate AI — climate action platform.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

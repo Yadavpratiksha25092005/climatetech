@@ -97,6 +97,13 @@ func wouldRemoveLastActiveAdmin(tx *gorm.DB, targetID uuid.UUID) (bool, error) {
 	var target models.User
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Select("id", "role", "is_active").First(&target, "id = ?", targetID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// A nonexistent user can't be the one whose demotion/deactivation
+			// zeroes out the active-admin count — let the caller's own
+			// RowsAffected==0 check surface the real 404 instead of this
+			// lookup masking it as a 500.
+			return false, nil
+		}
 		return false, err
 	}
 	if target.Role != models.RoleAdmin || !target.IsActive {

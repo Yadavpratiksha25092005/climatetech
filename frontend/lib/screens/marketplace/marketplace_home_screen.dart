@@ -8,6 +8,7 @@ import '../../core/theme/dark_palette.dart';
 import '../../models/listing_model.dart';
 import '../../providers/marketplace_provider.dart';
 import '../../widgets/dark_text_field.dart';
+import '../../widgets/feature_intro_banner.dart';
 
 class MarketplaceHomeScreen extends ConsumerStatefulWidget {
   const MarketplaceHomeScreen({super.key});
@@ -79,6 +80,13 @@ class _MarketplaceHomeScreenState extends ConsumerState<MarketplaceHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const FeatureIntroBanner(
+                icon: Icons.storefront_outlined,
+                title: 'Buy and sell eco-friendly goods',
+                description:
+                    'Browse listings from verified local sellers, or tap the + button to apply as a seller and post your own items.',
+              ),
+              const SizedBox(height: 16),
               DarkTextField(
                 hint: 'Search listings...',
                 icon: Icons.search,

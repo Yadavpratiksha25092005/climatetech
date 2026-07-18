@@ -29,7 +29,7 @@ class AlertService {
     try {
       final response = await _api.dio.get('/alerts/unread-count');
       final data = response.data['data'];
-      return (data is Map ? data['count'] as int? : null) ?? 0;
+      return (data is Map ? (data['count'] as num?)?.toInt() : null) ?? 0;
     } on DioException catch (e) {
       throw AlertException(_extractError(e));
     }

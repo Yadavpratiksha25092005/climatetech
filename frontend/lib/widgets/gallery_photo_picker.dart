@@ -46,6 +46,7 @@ class _GalleryPhotoPickerState extends ConsumerState<GalleryPhotoPicker> {
       final url = await ref
           .read(cloudinaryServiceProvider)
           .uploadImage(File(picked.path));
+      if (!mounted) return;
       // Append to the latest widget.urls, not a stale local copy — the list
       // could have changed (e.g. a removal) while the upload was in flight.
       widget.onChanged([...widget.urls, url]);

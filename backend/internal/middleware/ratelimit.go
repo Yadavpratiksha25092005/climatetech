@@ -26,16 +26,21 @@ func RateLimit(keyPrefix string, maxAttempts int, window time.Duration) gin.Hand
 			c.Next()
 			return
 		}
-		if count == 1 {
-			// Only set the expiry on the first hit in the window — a
-			// per-request TTL reset here would let a steady stream of
-			// requests keep the window alive forever and never actually
-			// throttle anything.
+
+		// INCR and EXPIRE aren't atomic together — if the EXPIRE below ever
+		// fails (a transient Redis error) right after the count==1 INCR
+		// created the key, the key would be left with no TTL and count
+		// upward forever, permanently locking out that IP once it crosses
+		// maxAttempts. Checking TTL on every request (not just count==1)
+		// self-heals that case by re-applying the expiry as soon as it's
+		// noticed missing, instead of trusting the first attempt succeeded.
+		ttl, ttlErr := database.RedisClient.TTL(database.Ctx, key).Result()
+		if ttlErr == nil && ttl < 0 {
 			database.RedisClient.Expire(database.Ctx, key, window)
+			ttl = window
 		}
 
 		if count > int64(maxAttempts) {
-			ttl, ttlErr := database.RedisClient.TTL(database.Ctx, key).Result()
 			retryAfter := window
 			if ttlErr == nil && ttl > 0 {
 				retryAfter = ttl

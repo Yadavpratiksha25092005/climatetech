@@ -2,9 +2,9 @@ class ApiConstants {
   ApiConstants._();
 
   // Point this at your Go backend. Use --dart-define=API_BASE_URL=... to override at build time.
- static const String baseUrl = String.fromEnvironment(
+  static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.18:8080/api/v1',
+    defaultValue: 'http://43.205.146.178:8080/api/v1',
   );
 
   static const String register = '/auth/register';

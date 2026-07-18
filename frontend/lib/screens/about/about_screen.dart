@@ -35,7 +35,7 @@ class AboutScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.04), borderRadius: BorderRadius.circular(16)),
               child: const Text(
-                'ClimateTech helps you track your carbon footprint, stay ahead of local climate risks, and build sustainable habits through community challenges — turning everyday choices into measurable climate action.',
+                'OneClimate AI helps you track your carbon footprint, stay ahead of local climate risks, and build sustainable habits through community challenges — turning everyday choices into measurable climate action.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: DarkPalette.textSecondary, fontSize: 13, height: 1.5),
               ),

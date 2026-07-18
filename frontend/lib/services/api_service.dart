@@ -80,12 +80,22 @@ class ApiService {
         data: {'refresh_token': refreshToken},
       );
       final data = response.data;
-      final newAccessToken = data is Map && data['data'] is Map ? data['data']['access_token'] as String? : null;
+      final payload = data is Map && data['data'] is Map ? data['data'] as Map : null;
+      final newAccessToken = payload?['access_token'] as String?;
       if (newAccessToken == null) {
         await _storage.clear();
         return false;
       }
       await _storage.saveAccessToken(newAccessToken);
+
+      // Only saved if the backend actually rotates it — today's endpoint
+      // reissues just the access token, but if rotation is ever added
+      // server-side, the old refresh_token left in storage would otherwise
+      // go stale and the next refresh would fail outright.
+      final rotatedRefreshToken = payload?['refresh_token'] as String?;
+      if (rotatedRefreshToken != null) {
+        await _storage.saveRefreshToken(rotatedRefreshToken);
+      }
       return true;
     } catch (_) {
       await _storage.clear();

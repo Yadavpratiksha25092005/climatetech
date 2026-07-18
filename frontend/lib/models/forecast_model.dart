@@ -30,10 +30,10 @@ class ForecastItem {
     final wind = json['wind'] as Map<String, dynamic>? ?? {};
 
     return ForecastItem(
-      time: DateTime.fromMillisecondsSinceEpoch(((json['dt'] as int?) ?? 0) * 1000),
+      time: DateTime.fromMillisecondsSinceEpoch(((json['dt'] as num?)?.toInt() ?? 0) * 1000),
       temperature: (main['temp'] as num?)?.toDouble() ?? 0,
       feelsLike: (main['feels_like'] as num?)?.toDouble() ?? 0,
-      humidity: main['humidity'] as int? ?? 0,
+      humidity: (main['humidity'] as num?)?.toInt() ?? 0,
       windSpeed: (wind['speed'] as num?)?.toDouble() ?? 0,
       windDeg: (wind['deg'] as num?)?.toInt() ?? 0,
       // OpenWeather's "pop" is a 0-1 probability; convert to a 0-100 percentage.

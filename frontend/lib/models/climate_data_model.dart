@@ -51,17 +51,17 @@ class ClimateDataModel {
       longitude: (record['longitude'] as num?)?.toDouble() ?? 0,
       temperature: (record['temperature'] as num?)?.toDouble() ?? 0,
       feelsLike: (record['feels_like'] as num?)?.toDouble() ?? 0,
-      humidity: record['humidity'] as int? ?? 0,
+      humidity: (record['humidity'] as num?)?.toInt() ?? 0,
       windSpeed: (record['wind_speed'] as num?)?.toDouble() ?? 0,
-      windDeg: record['wind_deg'] as int? ?? 0,
-      pressure: record['pressure'] as int? ?? 0,
-      visibility: record['visibility'] as int? ?? 0,
+      windDeg: (record['wind_deg'] as num?)?.toInt() ?? 0,
+      pressure: (record['pressure'] as num?)?.toInt() ?? 0,
+      visibility: (record['visibility'] as num?)?.toInt() ?? 0,
       rainVolume: (record['rain_volume'] as num?)?.toDouble() ?? 0,
       dewPoint: (record['dew_point'] as num?)?.toDouble() ?? 0,
       weatherMain: record['weather_main'] as String? ?? '',
       weatherDescription: record['weather_description'] as String? ?? '',
       weatherIcon: record['weather_icon'] as String? ?? '',
-      aqi: record['aqi'] as int? ?? 0,
+      aqi: (record['aqi'] as num?)?.toInt() ?? 0,
       // Read from the same `record` object as every sibling field here —
       // reading from top-level `json` was always missing and silently
       // defaulting to 'Unknown'.

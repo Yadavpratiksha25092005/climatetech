@@ -29,7 +29,7 @@ class ClimateTechApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'Climate Tech',
+      title: 'OneClimate AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,

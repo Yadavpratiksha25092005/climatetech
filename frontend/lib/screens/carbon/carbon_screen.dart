@@ -9,6 +9,7 @@ import '../../models/carbon_activity_model.dart';
 import '../../providers/carbon_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/dark_text_field.dart';
+import '../../widgets/feature_intro_banner.dart';
 import '../../widgets/glass_card.dart';
 
 IconData categoryIcon(String category) {
@@ -89,6 +90,13 @@ class CarbonScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const FeatureIntroBanner(
+                icon: Icons.eco_outlined,
+                title: 'Track your carbon footprint',
+                description:
+                    'Log daily activities like travel, electricity, and food — we convert them into kg of CO₂ so you can see your impact and find ways to reduce it.',
+              ),
+              const SizedBox(height: 16),
               if (carbonState.status == CarbonStatus.loading)
                 const Padding(
                   padding: EdgeInsets.only(top: 60),

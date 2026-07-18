@@ -36,7 +36,7 @@ class HelpScreen extends StatelessWidget {
     final uri = Uri(
       scheme: 'mailto',
       path: 'support@climatetech.app',
-      query: 'subject=ClimateTech support request',
+      query: 'subject=OneClimate AI support request',
     );
     bool launched = false;
     try {
