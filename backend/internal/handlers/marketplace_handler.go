@@ -50,6 +50,12 @@ type applySellerRequest struct {
 func (h *MarketplaceHandler) ApplySeller(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
 
+	var req applySellerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Fail(c, http.StatusBadRequest, "invalid request payload", err)
+		return
+	}
+
 	err := database.DB.Where("user_id = ?", userID).First(&models.Seller{}).Error
 	if err == nil {
 		utils.Fail(c, http.StatusConflict, "you already have a seller profile", nil)
@@ -57,12 +63,6 @@ func (h *MarketplaceHandler) ApplySeller(c *gin.Context) {
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		utils.Fail(c, http.StatusInternalServerError, "failed to check existing seller profile", err)
-		return
-	}
-
-	var req applySellerRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.Fail(c, http.StatusBadRequest, "invalid request payload", err)
 		return
 	}
 

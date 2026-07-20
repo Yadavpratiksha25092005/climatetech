@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +30,14 @@ const activeStatusCacheTTL = 60 * time.Second
 
 func activeStatusCacheKey(userID uuid.UUID) string {
 	return "active_status:" + userID.String()
+}
+
+// LoggedOutAtKey stores the Unix timestamp of a user's most recent logout.
+// AuthRequired rejects any access token issued before this time, so logout
+// revokes the token immediately instead of waiting out its remaining
+// lifetime.
+func LoggedOutAtKey(userID uuid.UUID) string {
+	return "logged_out_at:" + userID.String()
 }
 
 func isUserActive(userID uuid.UUID) (bool, error) {
@@ -85,6 +94,17 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 			utils.Fail(c, http.StatusUnauthorized, "token is not an access token", nil)
 			c.Abort()
 			return
+		}
+
+		loggedOutAt, err := database.RedisClient.Get(database.Ctx, LoggedOutAtKey(claims.UserID)).Result()
+		if err == nil && claims.IssuedAt != nil {
+			if loggedOutUnix, parseErr := strconv.ParseInt(loggedOutAt, 10, 64); parseErr == nil {
+				if claims.IssuedAt.Unix() <= loggedOutUnix {
+					utils.Fail(c, http.StatusUnauthorized, "token has been revoked", nil)
+					c.Abort()
+					return
+				}
+			}
 		}
 
 		active, err := isUserActive(claims.UserID)

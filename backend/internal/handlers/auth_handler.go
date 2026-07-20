@@ -9,6 +9,7 @@ import (
 
 	"climatetech-backend/internal/config"
 	"climatetech-backend/internal/database"
+	"climatetech-backend/internal/middleware"
 	"climatetech-backend/internal/models"
 	"climatetech-backend/internal/utils"
 
@@ -237,6 +238,16 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		utils.Fail(c, http.StatusInternalServerError, "failed to log out", err)
 		return
 	}
+
+	// Recorded so AuthRequired can reject any access token issued before
+	// this moment, even though the token itself remains cryptographically
+	// valid until it expires. TTL matches the refresh token lifetime since
+	// no access token can outlive it.
+	revokeWindow := time.Duration(h.cfg.JWTRefreshExpiryDays) * 24 * time.Hour
+	if err := database.RedisClient.Set(database.Ctx, middleware.LoggedOutAtKey(userID), time.Now().Unix(), revokeWindow).Err(); err != nil {
+		log.Printf("failed to record logout timestamp for user %s: %v", userID, err)
+	}
+
 	utils.Success(c, http.StatusOK, "logged out successfully", nil)
 }
 
