@@ -117,36 +117,58 @@ class _MarketplaceHomeScreenState extends ConsumerState<MarketplaceHomeScreen> {
   Widget _categoryChips() {
     final categories = ['', ...marketplaceCategories];
     return SizedBox(
-      height: 36,
-      child: ListView.separated(
+      height: 176,
+      child: GridView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.86,
+        ),
         itemBuilder: (context, i) {
           final category = categories[i];
           final label = category.isEmpty ? 'All' : category;
           final selected = _selectedCategory == category;
           return InkWell(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             onTap: () {
               setState(() => _selectedCategory = category);
               ref.read(marketplaceProvider.notifier).setCategory(category);
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: selected ? DarkPalette.leafGreen : Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Center(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: selected ? Colors.black : DarkPalette.textSecondary,
-                    fontSize: 12,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            child: SizedBox(
+              width: 76,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 68,
+                    height: 68,
+                    decoration: BoxDecoration(
+                      color: selected ? DarkPalette.leafGreen.withOpacity(0.18) : Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: selected ? Border.all(color: DarkPalette.leafGreen, width: 1.5) : null,
+                    ),
+                    child: Icon(
+                      category.isEmpty ? Icons.apps_rounded : marketplaceCategoryIcon(category),
+                      color: selected ? DarkPalette.leafGreen : DarkPalette.textSecondary,
+                      size: 30,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 6),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: selected ? DarkPalette.leafGreen : DarkPalette.textSecondary,
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           );

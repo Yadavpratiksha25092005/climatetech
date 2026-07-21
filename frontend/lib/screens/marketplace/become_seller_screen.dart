@@ -23,6 +23,7 @@ class _BecomeSellerScreenState extends ConsumerState<BecomeSellerScreen> {
   final _cityController = TextEditingController();
   final _phoneController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _customCategoryController = TextEditingController();
 
   String _category = marketplaceCategories.first;
   bool _submitting = false;
@@ -37,6 +38,7 @@ class _BecomeSellerScreenState extends ConsumerState<BecomeSellerScreen> {
     _cityController.dispose();
     _phoneController.dispose();
     _descriptionController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
@@ -48,12 +50,16 @@ class _BecomeSellerScreenState extends ConsumerState<BecomeSellerScreen> {
       _error = null;
     });
 
+    final effectiveCategory = _category == 'Other' && _customCategoryController.text.trim().isNotEmpty
+        ? _customCategoryController.text.trim()
+        : _category;
+
     final success = await ref.read(marketplaceProvider.notifier).applyAsSeller(
           shopName: _shopNameController.text.trim(),
           ownerName: _ownerNameController.text.trim(),
           address: _addressController.text.trim(),
           city: _cityController.text.trim(),
-          shopCategory: _category,
+          shopCategory: effectiveCategory,
           phone: _phoneController.text.trim(),
           description: _descriptionController.text.trim(),
         );
@@ -181,6 +187,15 @@ class _BecomeSellerScreenState extends ConsumerState<BecomeSellerScreen> {
             const SizedBox(height: 14),
             _label('Category'),
             _categoryDropdown(),
+            if (_category == 'Other') ...[
+              const SizedBox(height: 10),
+              DarkTextField(
+                hint: 'What exactly is it?',
+                icon: Icons.edit_outlined,
+                controller: _customCategoryController,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please specify the category' : null,
+              ),
+            ],
             const SizedBox(height: 14),
             _label('Description (optional)'),
             DarkTextField(

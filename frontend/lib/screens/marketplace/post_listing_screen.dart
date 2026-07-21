@@ -23,6 +23,7 @@ class _PostListingScreenState extends ConsumerState<PostListingScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _locationController = TextEditingController();
+  final _customCategoryController = TextEditingController();
 
   String _category = marketplaceCategories.first;
   String _condition = 'used';
@@ -37,6 +38,7 @@ class _PostListingScreenState extends ConsumerState<PostListingScreen> {
     _descriptionController.dispose();
     _priceController.dispose();
     _locationController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
@@ -54,12 +56,16 @@ class _PostListingScreenState extends ConsumerState<PostListingScreen> {
       _error = null;
     });
 
+    final effectiveCategory = _category == 'Other' && _customCategoryController.text.trim().isNotEmpty
+        ? _customCategoryController.text.trim()
+        : _category;
+
     final price = double.tryParse(_priceController.text.trim()) ?? 0;
     final success = await ref.read(marketplaceProvider.notifier).createListing(
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim(),
           price: price,
-          category: _category,
+          category: effectiveCategory,
           imageUrls: _imageUrls,
           condition: _condition,
           location: _locationController.text.trim(),
@@ -206,6 +212,15 @@ class _PostListingScreenState extends ConsumerState<PostListingScreen> {
             _label('Category'),
             _dropdown(_category, marketplaceCategories,
                 (v) => setState(() => _category = v ?? _category)),
+            if (_category == 'Other') ...[
+              const SizedBox(height: 10),
+              DarkTextField(
+                hint: 'What exactly is it?',
+                icon: Icons.edit_outlined,
+                controller: _customCategoryController,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please specify the category' : null,
+              ),
+            ],
             const SizedBox(height: 14),
             _label('Condition'),
             _dropdown(

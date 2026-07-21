@@ -89,10 +89,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String phone, String password) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final result = await _authService.login(email: email, password: password);
+      final result = await _authService.login(phone: phone, password: password);
       state = state.copyWith(
           status: AuthStatus.authenticated,
           user: result.user,
@@ -112,11 +112,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> register(String name, String email, String password) async {
+  Future<bool> register(String name, String phone, String password) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final result = await _authService.register(
-          name: name, email: email, password: password);
+          name: name, phone: phone, password: password);
       state = state.copyWith(
           status: AuthStatus.authenticated,
           user: result.user,

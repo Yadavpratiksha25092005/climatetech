@@ -313,6 +313,25 @@ func (h *ClimateHandler) GetForecast(c *gin.Context) {
 	})
 }
 
+// SearchLocations resolves a free-text place name to matching lat/lon
+// locations worldwide, so the client can fetch weather/forecast for any city.
+// GET /api/v1/climate/search?q=tokyo
+func (h *ClimateHandler) SearchLocations(c *gin.Context) {
+	query := strings.TrimSpace(c.Query("q"))
+	if query == "" || len(query) > 100 {
+		utils.Fail(c, http.StatusBadRequest, "valid 'q' query param is required", nil)
+		return
+	}
+
+	results, err := h.weatherService.SearchCity(query)
+	if err != nil {
+		utils.Fail(c, http.StatusBadGateway, "failed to search locations", err)
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "locations fetched", results)
+}
+
 type weatherSummaryResponse struct {
 	WeatherSummary     string `json:"weather_summary"`
 	ActivitySuggestion string `json:"activity_suggestion"`

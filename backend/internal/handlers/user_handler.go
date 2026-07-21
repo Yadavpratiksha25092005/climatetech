@@ -33,7 +33,7 @@ type UpdateFCMTokenRequest struct {
 	FCMToken string `json:"fcm_token" binding:"required,max=4096"`
 }
 
-// profileResponse embeds the standard UserResponse (id/name/email/role/
+// profileResponse embeds the standard UserResponse (id/name/phone/role/
 // avatar/total_points/badges/created_at) and anonymously flattens it in JSON,
 // alongside profile-only fields that don't belong on every UserResponse
 // caller (e.g. auth login/register).

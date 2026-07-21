@@ -92,6 +92,7 @@ func RegisterRoutes(router *gin.Engine, cfg *config.Config) {
 			climate.GET("/current", climateHandler.GetCurrentClimate)
 			climate.GET("/history", climateHandler.GetClimateHistory)
 			climate.GET("/forecast", climateHandler.GetForecast)
+			climate.GET("/search", climateHandler.SearchLocations)
 			climate.GET("/ai-summary", climateHandler.GetWeatherSummary)
 		}
 

@@ -18,13 +18,13 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -32,7 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() != true) return;
     final success = await ref.read(authProvider.notifier).login(
-          _emailController.text.trim(),
+          _phoneController.text.trim(),
           _passwordController.text,
         );
     if (success && mounted) context.go('/dashboard');
@@ -73,13 +73,13 @@ return Scaffold(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               DarkTextField(
-                                hint: 'Enter your email',
-                                icon: Icons.email_outlined,
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
+                                hint: 'Enter your phone number',
+                                icon: Icons.phone_outlined,
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
                                 validator: (v) {
-                                  if (v == null || v.isEmpty) return 'Email is required';
-                                  if (!v.contains('@')) return 'Enter a valid email';
+                                  if (v == null || v.isEmpty) return 'Phone number is required';
+                                  if (v.trim().length < 10) return 'Enter a valid phone number';
                                   return null;
                                 },
                               ),

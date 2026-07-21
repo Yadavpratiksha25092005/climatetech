@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -165,4 +166,43 @@ func (s *WeatherService) GetForecast(lat, lon float64) (*ForecastResponse, error
 		return nil, err
 	}
 	return &result, nil
+}
+
+type GeoLocation struct {
+	Name    string  `json:"name"`
+	State   string  `json:"state"`
+	Country string  `json:"country"`
+	Lat     float64 `json:"lat"`
+	Lon     float64 `json:"lon"`
+}
+
+// SearchCity resolves a free-text place name (e.g. "Tokyo" or "Navi Mumbai")
+// to up to 5 matching lat/lon locations worldwide, using OpenWeather's
+// Geocoding API — this is what lets the forecast screen look up weather
+// anywhere, not just the user's current GPS position.
+func (s *WeatherService) SearchCity(query string) ([]GeoLocation, error) {
+	if s.APIKey == "" {
+		return nil, fmt.Errorf("weather api key is not configured")
+	}
+
+	geoURL := fmt.Sprintf(
+		"https://api.openweathermap.org/geo/1.0/direct?q=%s&limit=5&appid=%s",
+		url.QueryEscape(query), s.APIKey,
+	)
+
+	resp, err := s.Client.Get(geoURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("geocoding api returned status %d", resp.StatusCode)
+	}
+
+	var results []GeoLocation
+	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+		return nil, err
+	}
+	return results, nil
 }

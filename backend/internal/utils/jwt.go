@@ -17,16 +17,16 @@ const (
 
 type Claims struct {
 	UserID uuid.UUID `json:"user_id"`
-	Email  string    `json:"email"`
+	Phone  string    `json:"phone"`
 	Role   string    `json:"role"`
 	Type   TokenType `json:"type"`
 	jwt.RegisteredClaims
 }
 
-func GenerateAccessToken(userID uuid.UUID, email, role, secret string, expiryMinutes int) (string, error) {
+func GenerateAccessToken(userID uuid.UUID, phone, role, secret string, expiryMinutes int) (string, error) {
 	claims := Claims{
 		UserID: userID,
-		Email:  email,
+		Phone:  phone,
 		Role:   role,
 		Type:   AccessToken,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -38,10 +38,10 @@ func GenerateAccessToken(userID uuid.UUID, email, role, secret string, expiryMin
 	return token.SignedString([]byte(secret))
 }
 
-func GenerateRefreshToken(userID uuid.UUID, email, role, secret string, expiryDays int) (string, error) {
+func GenerateRefreshToken(userID uuid.UUID, phone, role, secret string, expiryDays int) (string, error) {
 	claims := Claims{
 		UserID: userID,
-		Email:  email,
+		Phone:  phone,
 		Role:   role,
 		Type:   RefreshToken,
 		RegisteredClaims: jwt.RegisteredClaims{

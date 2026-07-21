@@ -32,7 +32,7 @@ const adminUsersPageSize = 20
 type adminUserRow struct {
 	ID        uuid.UUID   `json:"id"`
 	Name      string      `json:"name"`
-	Email     string      `json:"email"`
+	Phone     string      `json:"phone"`
 	Role      models.Role `json:"role"`
 	IsActive  bool        `json:"is_active"`
 	CreatedAt time.Time   `json:"created_at"`
@@ -50,7 +50,7 @@ func (h *AdminUserHandler) ListUsers(c *gin.Context) {
 
 	var users []adminUserRow
 	if err := database.DB.Model(&models.User{}).
-		Select("id", "name", "email", "role", "is_active", "created_at").
+		Select("id", "name", "phone", "role", "is_active", "created_at").
 		Order("created_at DESC").
 		Limit(adminUsersPageSize).
 		Offset(offset).

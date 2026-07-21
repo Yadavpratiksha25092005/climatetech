@@ -1,12 +1,45 @@
+import 'package:flutter/material.dart';
+
 const List<String> marketplaceCategories = [
-  'Electronics',
-  'Furniture',
-  'Vehicles',
+  'Plants & Saplings',
+  'Organic Compost',
   'Solar & Energy',
-  'Garden & Compost',
-  'Clothing',
+  'Upcycled & Recycled',
+  'Eco Home & Garden',
+  'Organic Food',
+  'Reusable & Zero-Waste',
+  'Eco Fashion',
+  'Water Conservation',
   'Other',
 ];
+
+/// Icon shown on the marketplace category grid for each entry in
+/// [marketplaceCategories] — falls back to a generic leaf icon for anything
+/// not explicitly mapped (e.g. a future category added without updating this).
+IconData marketplaceCategoryIcon(String category) {
+  switch (category) {
+    case 'Plants & Saplings':
+      return Icons.local_florist_outlined;
+    case 'Organic Compost':
+      return Icons.compost_outlined;
+    case 'Solar & Energy':
+      return Icons.solar_power_outlined;
+    case 'Upcycled & Recycled':
+      return Icons.recycling_outlined;
+    case 'Eco Home & Garden':
+      return Icons.yard_outlined;
+    case 'Organic Food':
+      return Icons.grass_outlined;
+    case 'Reusable & Zero-Waste':
+      return Icons.shopping_bag_outlined;
+    case 'Eco Fashion':
+      return Icons.checkroom_outlined;
+    case 'Water Conservation':
+      return Icons.water_drop_outlined;
+    default:
+      return Icons.eco_outlined;
+  }
+}
 
 class ListingModel {
   final String id;
@@ -69,7 +102,6 @@ class ListingDetailModel {
   final String city;
   final bool verified;
   final String contactName;
-  final String contactEmail;
   final String contactPhone;
 
   ListingDetailModel({
@@ -79,7 +111,6 @@ class ListingDetailModel {
     required this.city,
     required this.verified,
     required this.contactName,
-    required this.contactEmail,
     required this.contactPhone,
   });
 
@@ -94,8 +125,6 @@ class ListingDetailModel {
       city: sellerJson['city'] as String? ?? '',
       verified: sellerJson['verified'] as bool? ?? false,
       contactName: contactJson['name'] as String? ?? '',
-      contactEmail: contactJson['email'] as String? ?? '',
-      // Empty for sellers who applied before the phone field existed.
       contactPhone: contactJson['phone'] as String? ?? '',
     );
   }

@@ -403,8 +403,7 @@ func (h *MarketplaceHandler) attachSellerInfo(listings []models.Listing) ([]list
 }
 
 // GetListingDetail returns a single listing plus enough seller/contact info
-// for the Call/WhatsApp actions (name, email, and phone — phone may be empty
-// for sellers who applied before the phone field existed).
+// for the Call/WhatsApp actions (name and phone).
 // GET /api/v1/marketplace/listings/:id
 func (h *MarketplaceHandler) GetListingDetail(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
@@ -436,7 +435,7 @@ func (h *MarketplaceHandler) GetListingDetail(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := database.DB.Select("name", "email", "phone").First(&user, "id = ?", seller.UserID).Error; err != nil {
+	if err := database.DB.Select("name", "phone").First(&user, "id = ?", seller.UserID).Error; err != nil {
 		utils.Fail(c, http.StatusInternalServerError, "failed to load seller contact info", err)
 		return
 	}
@@ -451,7 +450,6 @@ func (h *MarketplaceHandler) GetListingDetail(c *gin.Context) {
 		},
 		"contact": gin.H{
 			"name":  user.Name,
-			"email": user.Email,
 			"phone": user.Phone,
 		},
 	})

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../models/ai_summary_model.dart';
 import '../models/climate_data_model.dart';
 import '../models/forecast_model.dart';
+import '../models/geo_location_model.dart';
 import 'api_service.dart';
 
 class ClimateException implements Exception {
@@ -36,6 +37,19 @@ class ClimateService {
         queryParameters: {'lat': lat, 'lon': lon, 'count': count},
       );
       return ForecastResult.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw ClimateException(_extractError(e));
+    }
+  }
+
+  Future<List<GeoLocationModel>> searchLocations(String query) async {
+    try {
+      final response = await _api.dio.get(
+        '/climate/search',
+        queryParameters: {'q': query},
+      );
+      final results = response.data['data'] as List<dynamic>? ?? [];
+      return results.map((e) => GeoLocationModel.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       throw ClimateException(_extractError(e));
     }

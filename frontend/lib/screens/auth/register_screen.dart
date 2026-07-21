@@ -19,7 +19,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _obscurePassword = true;
@@ -27,7 +27,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
     super.dispose();
@@ -37,7 +37,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (_formKey.currentState?.validate() != true) return;
     final success = await ref.read(authProvider.notifier).register(
           _nameController.text.trim(),
-          _emailController.text.trim(),
+          _phoneController.text.trim(),
           _passwordController.text,
         );
     if (success && mounted) context.go('/dashboard');
@@ -85,13 +85,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ),
                             const SizedBox(height: 14),
                             DarkTextField(
-                              hint: 'Email',
-                              icon: Icons.email_outlined,
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
+                              hint: 'Phone number',
+                              icon: Icons.phone_outlined,
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
                               validator: (v) {
-                                if (v == null || v.isEmpty) return 'Email is required';
-                                if (!v.contains('@')) return 'Enter a valid email';
+                                if (v == null || v.isEmpty) return 'Phone number is required';
+                                if (v.trim().length < 10) return 'Enter a valid phone number';
                                 return null;
                               },
                             ),

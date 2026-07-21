@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme/dark_palette.dart';
 import '../../models/forecast_model.dart';
+import '../../models/geo_location_model.dart';
 import '../../providers/climate_provider.dart';
 import '../../widgets/mini_weather_icon.dart';
 
@@ -36,6 +37,9 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
   String? _error;
   String _locationName = 'Your location';
   List<ForecastItem> _items = [];
+  double? _searchedLat;
+  double? _searchedLon;
+  int _selectedDayIndex = 0;
 
   @override
   void initState() {
@@ -51,15 +55,20 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
     try {
       double lat;
       double lon;
-      final climateData = ref.read(climateProvider).data;
-      if (climateData != null) {
-        lat = climateData.latitude;
-        lon = climateData.longitude;
-        _locationName = climateData.locationName;
+      if (_searchedLat != null && _searchedLon != null) {
+        lat = _searchedLat!;
+        lon = _searchedLon!;
       } else {
-        final position = await ref.read(locationServiceProvider).getCurrentLocation();
-        lat = position.latitude;
-        lon = position.longitude;
+        final climateData = ref.read(climateProvider).data;
+        if (climateData != null) {
+          lat = climateData.latitude;
+          lon = climateData.longitude;
+          _locationName = climateData.locationName;
+        } else {
+          final position = await ref.read(locationServiceProvider).getCurrentLocation();
+          lat = position.latitude;
+          lon = position.longitude;
+        }
       }
 
       final result = await ref.read(climateServiceProvider).getForecast(lat: lat, lon: lon, count: 40);
@@ -78,6 +87,23 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
     }
   }
 
+  Future<void> _openLocationSearch() async {
+    final selected = await showModalBottomSheet<GeoLocationModel>(
+      context: context,
+      backgroundColor: DarkPalette.navyCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => const _LocationSearchSheet(),
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _searchedLat = selected.lat;
+      _searchedLon = selected.lon;
+      _locationName = selected.displayName;
+    });
+    _load();
+  }
+
   /// One representative (highest-temp) slot per calendar day, oldest first.
   List<ForecastItem> get _dailyItems {
     final byDate = <String, ForecastItem>{};
@@ -93,6 +119,20 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
 
   List<ForecastItem> get _displayItems => _mode == _ForecastMode.hourly ? _items : _dailyItems;
 
+  /// Items shown in the "Forecast details" list below. In Hourly mode this
+  /// is just every hourly slot. In Daily mode, tapping a day chip selects
+  /// that calendar day, and this returns only that day's own hourly slots —
+  /// so "Monday" actually shows Monday's hour-by-hour temperatures instead
+  /// of the single daily-summary row every day chip used to share.
+  List<ForecastItem> get _detailItems {
+    if (_mode == _ForecastMode.hourly) return _items;
+    final daily = _dailyItems;
+    if (daily.isEmpty) return [];
+    final selected = daily[_selectedDayIndex.clamp(0, daily.length - 1)];
+    final selectedKey = DateFormat('yyyy-MM-dd').format(selected.time.toLocal());
+    return _items.where((item) => DateFormat('yyyy-MM-dd').format(item.time.toLocal()) == selectedKey).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,6 +145,12 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
           onPressed: () => context.pop(),
         ),
         title: const Text('Forecast', style: TextStyle(color: DarkPalette.textPrimary, fontSize: 16)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: DarkPalette.textPrimary),
+            onPressed: _openLocationSearch,
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: DarkPalette.leafGreen))
@@ -118,7 +164,11 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
 
   Widget _buildContent() {
     final items = _displayItems;
+    final detailItems = _detailItems;
     final chartItems = items.take(8).toList();
+    final detailsTitle = _mode == _ForecastMode.hourly
+        ? 'Forecast details'
+        : (detailItems.isNotEmpty ? DateFormat('EEEE, MMM d').format(detailItems.first.time.toLocal()) : 'Forecast details');
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -138,15 +188,21 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
             const SizedBox(height: 20),
             _buildTrendCard(chartItems),
             const SizedBox(height: 24),
-            const Text('Forecast details', style: TextStyle(color: DarkPalette.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(detailsTitle, style: const TextStyle(color: DarkPalette.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, i) => _detailCard(items[i]),
-            ),
+            if (detailItems.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text('No hourly data available for this day.', style: TextStyle(color: DarkPalette.textSecondary, fontSize: 13)),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: detailItems.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, i) => _detailCard(detailItems[i]),
+              ),
           ],
         ),
       ),
@@ -156,20 +212,26 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
   Widget _buildLocationChip() {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.location_on, color: DarkPalette.leafGreen, size: 14),
-            const SizedBox(width: 6),
-            Text(_locationName, style: const TextStyle(color: DarkPalette.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
-          ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: _openLocationSearch,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.location_on, color: DarkPalette.leafGreen, size: 14),
+              const SizedBox(width: 6),
+              Text(_locationName, style: const TextStyle(color: DarkPalette.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              const Icon(Icons.keyboard_arrow_down, color: DarkPalette.textSecondary, size: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -192,7 +254,10 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
     final selected = _mode == value;
     return InkWell(
       borderRadius: BorderRadius.circular(10),
-      onTap: () => setState(() => _mode = value),
+      onTap: () => setState(() {
+        _mode = value;
+        _selectedDayIndex = 0;
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         alignment: Alignment.center,
@@ -214,6 +279,7 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
 
   Widget _buildTimeChips(List<ForecastItem> items) {
     final now = DateTime.now();
+    final isDaily = _mode == _ForecastMode.daily;
     return SizedBox(
       height: 104,
       child: ListView.separated(
@@ -223,33 +289,42 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
         itemBuilder: (context, i) {
           final item = items[i];
           final local = item.time.toLocal();
-          final isCurrent = _mode == _ForecastMode.hourly
-              ? i == 0
-              : local.year == now.year && local.month == now.month && local.day == now.day;
+          // In Hourly mode "current" just marks the very first (nearest-now)
+          // slot. In Daily mode it marks whichever day chip the user tapped
+          // — defaulting to today — so the highlighted chip always matches
+          // the day whose hourly breakdown is shown in Forecast details below.
+          final isCurrent = isDaily
+              ? i == _selectedDayIndex.clamp(0, items.length - 1)
+              : i == 0;
+          final isToday = local.year == now.year && local.month == now.month && local.day == now.day;
 
-          return Container(
-            width: 64,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: isCurrent ? DarkPalette.leafGreen.withOpacity(0.12) : Colors.white.withOpacity(0.04),
-              borderRadius: BorderRadius.circular(16),
-              border: isCurrent ? Border.all(color: DarkPalette.leafGreen.withOpacity(0.3)) : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  isCurrent && _mode == _ForecastMode.hourly ? 'Now' : _chipTimeLabel(item),
-                  style: TextStyle(color: isCurrent ? DarkPalette.textSecondary : DarkPalette.textMuted, fontSize: 10),
-                ),
-                const SizedBox(height: 6),
-                MiniWeatherIcon(icon: item.weatherIcon, size: 32),
-                const SizedBox(height: 6),
-                Text(
-                  '${item.temperature.round()}°',
-                  style: const TextStyle(color: DarkPalette.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-              ],
+          return InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: isDaily ? () => setState(() => _selectedDayIndex = i) : null,
+            child: Container(
+              width: 64,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: isCurrent ? DarkPalette.leafGreen.withOpacity(0.12) : Colors.white.withOpacity(0.04),
+                borderRadius: BorderRadius.circular(16),
+                border: isCurrent ? Border.all(color: DarkPalette.leafGreen.withOpacity(0.3)) : null,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    !isDaily && isCurrent ? 'Now' : (isDaily && isToday ? 'Today' : _chipTimeLabel(item)),
+                    style: TextStyle(color: isCurrent ? DarkPalette.textSecondary : DarkPalette.textMuted, fontSize: 10),
+                  ),
+                  const SizedBox(height: 6),
+                  MiniWeatherIcon(icon: item.weatherIcon, size: 32),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${item.temperature.round()}°',
+                    style: const TextStyle(color: DarkPalette.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -491,6 +566,131 @@ class _TrendChart extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Bottom sheet that lets the user search any city worldwide and pop back
+/// the chosen [GeoLocationModel] so ForecastScreen can load weather for it.
+class _LocationSearchSheet extends ConsumerStatefulWidget {
+  const _LocationSearchSheet();
+
+  @override
+  ConsumerState<_LocationSearchSheet> createState() => _LocationSearchSheetState();
+}
+
+class _LocationSearchSheetState extends ConsumerState<_LocationSearchSheet> {
+  final _controller = TextEditingController();
+  List<GeoLocationModel> _results = [];
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _results = [];
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final results = await ref.read(climateServiceProvider).searchLocations(trimmed);
+      if (!mounted) return;
+      setState(() {
+        _results = results;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Could not search locations. Please try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Search any city worldwide',
+                style: TextStyle(color: DarkPalette.textPrimary, fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                onChanged: _search,
+                style: const TextStyle(color: DarkPalette.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'e.g. Tokyo, London, New York',
+                  hintStyle: const TextStyle(color: DarkPalette.textMuted),
+                  prefixIcon: const Icon(Icons.search, color: DarkPalette.textSecondary),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.06),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator(color: DarkPalette.leafGreen)),
+                )
+              else if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(_error!, style: const TextStyle(color: Color(0xFFE0605A), fontSize: 13)),
+                )
+              else if (_results.isEmpty && _controller.text.trim().isNotEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text('No matching locations found.', style: TextStyle(color: DarkPalette.textSecondary, fontSize: 13)),
+                )
+              else
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 320),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _results.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 4),
+                    itemBuilder: (context, i) {
+                      final loc = _results[i];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.location_city, color: DarkPalette.leafGreen),
+                        title: Text(loc.displayName, style: const TextStyle(color: DarkPalette.textPrimary, fontSize: 14)),
+                        onTap: () => Navigator.of(context).pop(loc),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -108,7 +108,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 12),
         Text(user.name, style: const TextStyle(color: DarkPalette.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text(user.email, style: const TextStyle(color: DarkPalette.textSecondary, fontSize: 13)),
+        Text(user.phone, style: const TextStyle(color: DarkPalette.textSecondary, fontSize: 13)),
       ],
     );
   }

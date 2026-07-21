@@ -25,14 +25,14 @@ class AuthService {
 
   Future<AuthResult> register({
     required String name,
-    required String email,
+    required String phone,
     required String password,
     String role = 'user',
   }) async {
     try {
       final response = await _api.dio.post(ApiConstants.register, data: {
         'name': name,
-        'email': email,
+        'phone': phone,
         'password': password,
         'role': role,
       });
@@ -42,10 +42,10 @@ class AuthService {
     }
   }
 
-  Future<AuthResult> login({required String email, required String password}) async {
+  Future<AuthResult> login({required String phone, required String password}) async {
     try {
       final response = await _api.dio.post(ApiConstants.login, data: {
-        'email': email,
+        'phone': phone,
         'password': password,
       });
       return _handleAuthResponse(response.data['data']);

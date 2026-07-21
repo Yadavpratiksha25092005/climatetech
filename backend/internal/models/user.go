@@ -18,11 +18,10 @@ const (
 type User struct {
 	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	Name         string    `gorm:"type:varchar(150);not null" json:"name"`
-	Email        string    `gorm:"type:varchar(150);uniqueIndex;not null" json:"email"`
 	PasswordHash string    `gorm:"type:text;not null" json:"-"`
 	Role         Role      `gorm:"type:varchar(20);not null;default:'user'" json:"role"`
 	Avatar       string    `gorm:"type:text" json:"avatar,omitempty"`
-	Phone        string    `gorm:"type:varchar(20)" json:"phone,omitempty"`
+	Phone        string    `gorm:"type:varchar(20);uniqueIndex;not null" json:"phone"`
 	IsActive     bool      `gorm:"default:true" json:"is_active"`
 	FCMToken     string    `gorm:"type:text" json:"-"`
 	TotalPoints  int       `gorm:"not null;default:0" json:"-"`
@@ -46,7 +45,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 type UserResponse struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
-	Email       string    `json:"email"`
+	Phone       string    `json:"phone"`
 	Role        Role      `json:"role"`
 	Avatar      string    `json:"avatar,omitempty"`
 	TotalPoints int       `json:"total_points"`
@@ -58,7 +57,7 @@ func (u *User) ToResponse() UserResponse {
 	return UserResponse{
 		ID:          u.ID,
 		Name:        u.Name,
-		Email:       u.Email,
+		Phone:       u.Phone,
 		Role:        u.Role,
 		Avatar:      u.Avatar,
 		TotalPoints: u.TotalPoints,
